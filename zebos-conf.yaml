@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: f5-tmm-dynamic-routing-template
+data:
+  ZebOS.conf: |
+    ip prefix-list PREFIX_LENGTH seq 5 permit 0.0.0.0/0 ge 32
+    !
+    route-map FILTER permit 10
+      match ip address prefix-list PREFIX_LENGTH
+    !
+    bfd gtsm enable
+    !
+    interface external
+      bfd interval 100 minrx 100 multiplier 3
+    !
+    router bgp 64522
+    bgp router-id 172.16.200.1
+    bgp log-neighbor-changes
+    bgp graceful-restart restart-time 120
+    no bgp default ipv4-unicast
+    redistribute kernel route-map FILTER
+    redistribute static route-map FILTER
+    max-paths ebgp 5
+    !
+    neighbor spkv4 peer-group
+    neighbor spkv4 remote-as 64521
+    neighbor spkv4 activate
+    neighbor spkv4 fall-over bfd
+    neighbor spkv4 timers 10 30
+    neighbor 10.1.10.5 peer-group spkv4
+    !
+    address-family ipv4 unicast
+      network 172.16.200.0 mask 255.255.255.0
+      redistribute kernel route-map FILTER
+      redistribute static route-map FILTER
+    exit-address-family

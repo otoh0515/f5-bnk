@@ -1,0 +1,9 @@
+apiVersion: "k8s.f5net.com/v1"
+kind: F5SPKStaticRoute
+metadata:
+  name: calico-static-route
+spec:
+  destination: 169.254.25.10
+  prefixLen: 32
+  type: gateway
+  gateway: 169.254.1.1

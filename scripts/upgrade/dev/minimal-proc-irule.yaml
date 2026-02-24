@@ -1,0 +1,16 @@
+apiVersion: k8s.f5net.com/v1
+kind: F5BigCneIrule
+metadata:
+  name: my-irule
+spec:
+  iRule: |
+
+    # Simple proc that returns a greeting string
+    proc greet {name} {
+        return "Hello, $name"
+    }
+
+    when HTTP_REQUEST {
+      HTTP::header insert X-Forwarded-For [IP::remote_addr]
+      HTTP::header insert X-Custom-Header [call greet [IP::remote_addr] ]
+    }

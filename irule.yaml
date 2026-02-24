@@ -1,0 +1,14 @@
+apiVersion: k8s.f5net.com/v1
+kind: F5BigCneIrule
+metadata:
+  name: my-irule
+spec:
+  iRule: |
+    when HTTP_REQUEST {
+      HTTP::header insert X-Forwarded-For [IP::remote_addr]
+      HTTP::header insert X-Custom-Header My-Custom-Header
+      log local0. "HTTP request from [IP::remote_addr]"
+    }
+    when HTTP_RESPONSE {
+      log local0. "HTTP [HTTP::status], content-length: [HTTP::header value "content-length"]"
+    }

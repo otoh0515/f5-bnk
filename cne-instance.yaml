@@ -1,0 +1,80 @@
+apiVersion: k8s.f5.com/v1
+kind: CNEInstance
+metadata:
+  labels:
+    app.kubernetes.io/name: f5-lifecycle-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: "f5-cne-controller"
+  namespace: f5-bnk
+spec:
+  product:
+    gatewayAPI: true
+    type: BNK
+  manifestVersion: 2.2.0-3.2226.0-0.0.385
+  wholeCluster: true
+  dpu:
+    enabled: false
+  # containerPlatform: Generic # moved to flo-values in v2.2.0
+  # Disable telemetry
+  telemetry:
+    loggingSubsystem:
+      enabled: false
+    metricSubsystem:
+      enabled: true
+  certificate:
+    clusterIssuer: bnk-ca-cluster-issuer
+  deploymentSize: "Small"
+  registry:
+    uri: "repo.f5.com"
+    imagePullSecrets:
+    - name: far-secret
+    imagePullPolicy: Always
+  networkAttachments:
+  - external-net
+  - internal-net
+
+  # Features
+  # CSRC Egress
+  pseudoCNI:
+    enabled: true
+  # BGP
+  dynamicRouting:
+    enabled: true
+  # Core dump files
+  coreCollection:
+    enabled: false
+  
+  # AFM
+  # for testing, reduce resources required by pod
+  firewallACL:
+    enabled: false # firewallACL
+
+  advanced:
+  # use demo mode for deployment in UDF
+    demoMode:
+      enabled: true
+  # enable maintenanceMode using kubectl patch
+    maintenanceMode:
+      enabled: false
+    pseudoCNI:
+      env:
+      - name: "DISABLE_CHECKSUM_OFFLOAD" # required for smae-node egress in VM environment
+        value: "true"
+      - name: "EXCLUDE_CIDR"
+        value: "100.96.8.0/11,100.96.0.0/11"
+    tmm:
+      env:
+      - name: "TMM_CALICO_ROUTER"
+        value: "default"
+      - name: "TMM_MAPRES_ADDL_VETHS_ON_DP"
+        value: "true"
+      - name: "TMM_K8S_ROUTES"
+        value: "169.254.0.0/16,10.233.0.0/16"
+        
+    envDiscovery: # added for CNE v2.2.0
+      enabled: false
+      stopOnFail: true
+      runAfterSuccess: true
+      disableCheckVFs: true
+      disableCheckSFConfig: false
+      disableCheckTaints: false

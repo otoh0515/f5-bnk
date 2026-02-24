@@ -1,0 +1,17 @@
+apiVersion: "k8s.f5net.com/v1"
+kind: F5SPKVlan
+metadata:
+  name: external-vlan
+spec:
+  name: external-vlan
+  interfaces:
+    - "1.1"
+  tag: 0
+  selfip_v4s:
+    - 10.1.10.201
+    - 10.1.10.202
+    - 10.1.10.203
+  prefixlen_v4: 24
+  auto_lasthop: "AUTO_LASTHOP_ENABLED"
+  internal: true
+

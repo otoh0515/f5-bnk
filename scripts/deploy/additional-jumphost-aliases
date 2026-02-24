@@ -1,0 +1,77 @@
+# change to working directory
+cd ~/udf-cne/bnk-2.2.0-ga 2>/dev/null || cd ~
+
+alias install-cne-tools="source <(curl -fsSL https://gitlab.com/etlawby/udf-cne/-/raw/main/cne-tools/install.sh)"
+
+# UDF-specific aliases
+alias reclone="source ~/udf-cne/reclone-repo.sh"
+alias deploy="bash ~/udf-cne/bnk-2.2.0-ga/scripts/full-deploy.sh"
+alias deploy20="bash ~/udf-cne/bnk-'2.0.0'-ga/scripts/full-deploy.sh" # quoted to avoid automatic updating
+alias deploy21="bash ~/udf-cne/bnk-'2.1.0'-ga/scripts/full-deploy.sh" # quoted to avoid automatic updating
+alias upgrade="bash ~/udf-cne/bnk-2.2.0-ga/scripts/upgrade/2.1.0/upgrade-v2.0-v2.1.sh"
+alias remove="bash ~/udf-cne/bnk-2.2.0-ga/scripts/upgrade/2.1.0/remove.sh"
+alias bnk-deploy="bash ~/udf-cne/bnk-2.2.0-ga/scripts/bnk-deploy.sh"
+alias bnk-remove="bash ~/udf-cne/bnk-2.2.0-ga/scripts/bnk-remove.sh"
+alias environment-deploy="bash ~/udf-cne/bnk-2.2.0-ga/scripts/environment-deploy.sh"
+alias bnk-test="bash ~/udf-cne/bnk-2.2.0-ga/scripts/test.sh"
+alias auto='nohup bash ~/udf-cne/bnk-2.2.0-ga/scripts/automatic.sh > nohup.out 2>&1 < /dev/null &'
+alias fast='nohup bash ~/udf-cne/bnk-2.2.0-ga/scripts/fast-automatic.sh > nohup.out 2>&1 < /dev/null &'
+alias stop-deployed="touch ~/udf-cne/bnk-2.2.0-ga/scripts/stop-on-deployment"
+alias stop-removed="touch ~/udf-cne/bnk-2.2.0-ga/scripts/stop-on-removal"
+alias egress-update="kubectl delete -f ~/udf-cne/bnk-2.2.0-ga/egress.yaml -n f5-bnk && sleep 5 && kubectl apply -f ~/udf-cne/bnk-2.2.0-ga/egress.yaml -n f5-bnk"
+alias egress-test="kubectl -n red exec -it deployments/nginx-deployment -c netshoot -- curl -Lskm1 10.2.30.101"
+alias fw-enable="bash ~/udf-cne/bnk-2.2.0-ga/scripts/deploy/090-deploy-bnk-fw.sh"
+alias fw-disable="bash ~/udf-cne/bnk-2.2.0-ga/scripts/remove/090-remove-bnk-fw.sh"
+alias cleanup="bash ~/udf-cne/cne-tools/bin/cne-cr.sh all --delete --force --crds --verbose" # cne-tools version
+
+# kubernetes aliases
+alias k="kubectl"
+alias kc="kubectl"
+complete -o default -F __start_kubectl k
+complete -o default -F __start_kubectl kc
+alias calicoctl="calicoctl --allow-version-mismatch"
+alias vi="vim -C --noplugin -c 'syn off'"
+alias history="history | sed 's|^[[:space:]]*[0-9]\+[[:space:]]*||'"
+
+# Generic aliases
+alias vlans="kubectl get f5-spk-vlans.k8s.f5net.com -A"
+alias tmm="kubectl exec daemonset/f5-tmm -c debug -n f5-bnk --"
+alias tmmdump="kubectl exec daemonset/f5-tmm -c debug -n f5-bnk -- tcpdump -nnni 0.0:nnn"
+
+# Alias to make it easier to call cwc-api
+#source ~/udf-cne/bnk-2.2.0-ga/scripts/cwc-api.sh
+
+cwc-api() { # cne-tools version - use latest if installed
+  if [ -x "$HOME/cne-tools/bin/cwc-api.sh" ]; then
+    "$HOME/cne-tools/bin/cwc-api.sh" "$@"
+  else
+    "$HOME/udf-cne/cne-tools/bin/cwc-api.sh" "$@"
+  fi
+}
+
+alias cwc="cwc-api"
+alias cwc_api="cwc-api"
+
+# Optional curl defaults
+cat <<EOF > ~/.curlrc
+# Custom CURL options
+--location
+--silent
+--insecure
+--max-time 1
+EOF
+
+kill-auto() {
+  local SCRIPT="/home/ubuntu/udf-cne/bnk-2.2.0-ga/scripts/automatic.sh"
+  local PIDS
+
+  PIDS=$(pgrep -f "$SCRIPT")
+
+  if [ -z "$PIDS" ]; then
+    echo "No running instances of $SCRIPT found."
+  else
+    echo "Terminating the following PIDs:"
+    echo "$PIDS"
+    kill -9 $PIDS
+  fi
+}

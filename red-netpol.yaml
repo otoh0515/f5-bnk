@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ns-isolation
+spec:
+  podSelector: {}  # Apply to all pods in namespace
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+      - podSelector: {}  # Allow all pods in the same namespace
+  egress:
+    - to:
+      - ipBlock:
+          cidr: 0.0.0.0/0  # allow egress to external IPs
+ 

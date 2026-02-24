@@ -1,0 +1,44 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tls-floqkview-grpc-svr
+  namespace: f5-bnk
+  annotations:
+    note: "manually applied workaround"
+spec:
+  secretName: tls-floqkview-grpc-svr-secret
+
+  # Certificate subject details
+  commonName: f5net.com
+  dnsNames:
+    - f5-lifecycle-operator.f5-bnk
+  emailAddresses:
+    - clientcert@f5net.com
+  subject:
+    countries:
+      - US
+    provinces:
+      - Washington
+    localities:
+      - Seattle
+    organizations:
+      - F5 Networks
+    organizationalUnits:
+      - PD
+
+  # Validity settings
+  duration: 1h
+  revisionHistoryLimit: 10
+
+  # Private key config
+  privateKey:
+    algorithm: RSA
+    size: 4096
+    encoding: PKCS1
+    rotationPolicy: Always
+
+  # Issuer reference
+  issuerRef:
+    name: bnk-ca-cluster-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

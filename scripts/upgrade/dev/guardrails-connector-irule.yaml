@@ -1,0 +1,124 @@
+apiVersion: k8s.f5net.com/v1
+kind: F5BigCneIrule
+metadata:
+  name: guardrails-connector-irule
+spec:
+  iRule: |
+    # Name: f5_ai_guardrails_connector
+    proc generate_inspect_data {items jsonObject} {
+        set results ""
+        foreach item $items {
+            if {[string match {\$*} $item]} {
+                # Item starts with $
+                set res [call json::json_get_tok $jsonObject $item ]
+            } else {
+                # Just take the literal item
+                set res $item
+            }
+            set res [string trim $res {"}]
+            append results "$res"
+        }
+        return $results
+    }
+
+    # ---- Utility proc: JSON string escape (top-level) ----
+    proc json_escape {s} {
+        # Escape backslash and quote, then control chars
+        set s [string map {\\ \\\\ \" \\\"} $s]
+        set s [string map [list \t \\t \n \\n \r \\r \b \\b \f \\f] $s]
+        return $s
+    }
+
+    proc calypso_scan {{payload ""} {helper_vs ""} {host ""} {path ""} {bearer ""} {timeout_ms ""} {idle_s ""}} {
+        if {$bearer eq ""} { set bearer [set ::static::calypso_bearer] }
+
+        # JSON body
+        set jpayload [call json_escape $payload]
+        set body "{\"input\":\"$jpayload\",\"configOverrides\":{},\"forceEnabled\":\[\],\"disabled\":\[\],\"verbose\":false}"
+
+        set rbody ""
+        set sts [call /Common/HSSR::http_req -uri "https://www.us1.calypsoai.app/backend/v1/scans" \
+                 -method POST -virt "/Common/vs_sb_calypso_https" \
+                 -body $body -type "application/json; charset=utf-8" -rbody rbody \
+                 -headers [list "Authorization" "Bearer $bearer"]]
+
+        set outcome [call json::json_get_tok $rbody "$.result.outcome"]
+
+        return [list $sts $outcome]
+    }
+
+    # ---- Events ----
+    when RULE_INIT {
+        # Tunables
+        set static::collect_chunk 1048576 ;# 1 MiB per collect
+        set static::calypso_bearer <PUT YOUR OWN API KEY HERE>
+        set static::paths [list "\$.messages\[-1\].content"]
+    }
+
+    when HTTP_REQUEST {
+        # Only methods that typically carry a body
+        if { [lsearch -exact {POST PUT PATCH} [HTTP::method]] < 0 } { return }
+
+        # Init per-request vars
+        set req_payload ""
+        set tot_collected 0
+        set have_clen 0
+        set content_len 0
+
+        if { [HTTP::header exists "Content-Length"] } {
+            set have_clen 1
+            set content_len [HTTP::header "Content-Length"]
+            HTTP::collect $content_len
+        } else {
+            HTTP::collect $static::collect_chunk
+        }
+    }
+
+    when HTTP_REQUEST_DATA {
+        # Accumulate body
+        append req_payload [HTTP::payload]
+        incr tot_collected [HTTP::payload length]
+
+        if { $have_clen } {
+            if { $tot_collected < $content_len } {
+                set remaining [expr {$content_len - $tot_collected}]
+                if { $remaining > $static::collect_chunk } { set remaining $static::collect_chunk }
+                HTTP::collect $remaining
+                return
+            }
+            # done
+        } else {
+            if { [HTTP::payload length] >= $static::collect_chunk } {
+                HTTP::collect $static::collect_chunk
+                return
+            }
+        }
+
+        set forInpection [call generate_inspect_data $static::paths $req_payload]
+        log local0. "FOR INSPECTION $forInpection"
+        set result [call calypso_scan $forInpection]
+
+        set sb_status [lindex $result 0]
+        set sb_resp   [lindex $result 1]
+        log local0. "Guardrails SB status=$sb_status, resp from calypso=$sb_resp"
+
+        if {$sb_resp ne "\"cleared\"" } {
+            set response_body {
+                {
+                  "choices": [
+                    {
+                      "index": 0,
+                      "message": {
+                        "role": "assistant",
+                        "content": "F5 AI Guardrails blocked this request"
+                      },
+                      "finish_reason": "stop"
+                    }
+                  ]
+                }
+            }
+            HTTP::respond 200 content $response_body "Content-Type" "application/json"
+        } else {
+            HTTP::release
+        }
+    }

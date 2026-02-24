@@ -1,0 +1,12 @@
+---
+apiVersion: "k8s.f5net.com/v1"
+kind: F5SPKSnatpool
+metadata:
+  name: "red-snat"
+spec:
+  name: "red-snat"
+  addressList:
+    - - 172.16.201.221
+      - 172.16.201.222
+    - - 172.16.201.223
+      - 172.16.201.224

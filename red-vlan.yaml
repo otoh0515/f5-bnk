@@ -1,0 +1,15 @@
+apiVersion: "k8s.f5net.com/v1"
+kind: F5SPKVlan
+metadata:
+  name: red-vlan
+spec:
+  name:  red-vlan
+  interfaces:
+    - "1.1"
+  tag: 201
+  selfip_v4s:
+    - 10.2.201.201
+    - 10.2.201.202
+    - 10.2.201.203
+  prefixlen_v4: 24
+  auto_lasthop: "AUTO_LASTHOP_ENABLED"

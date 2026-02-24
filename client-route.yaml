@@ -1,0 +1,19 @@
+apiVersion: "k8s.f5net.com/v1"
+kind: F5SPKStaticRoute
+metadata:
+  name: client-route
+spec:
+  destination: 10.1.30.0
+  prefixLen: 24
+  type: gateway
+  gateway: 10.2.201.5
+---
+apiVersion: "k8s.f5net.com/v1"
+kind: F5SPKStaticRoute
+metadata:
+  name: client-dnat-route
+spec:
+  destination: 10.2.30.0
+  prefixLen: 24
+  type: gateway
+  gateway: 10.2.201.5

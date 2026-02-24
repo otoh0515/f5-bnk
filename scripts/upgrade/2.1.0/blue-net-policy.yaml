@@ -1,0 +1,28 @@
+apiVersion: gateway.k8s.f5net.com/v1alpha1
+kind: BNKNetPolicy
+metadata:
+  name: netpolicy-http
+spec:
+  extensionRefs:
+  - kind: F5BigCneIrule
+    name: my-irule
+  targetRefs:
+  - kind: Gateway
+    name: my-http-gateway
+    group: gateway.networking.k8s.io
+---
+apiVersion: gateway.k8s.f5net.com/v1alpha1
+kind: BNKNetPolicy
+metadata:
+  name: netpolicy-https
+spec:
+  extensionRefs:
+  - kind: F5BigCneIrule
+    name: my-irule
+  targetRefs:
+  - kind: Gateway
+    name: my-https-gateway
+    group: gateway.networking.k8s.io
+    sectionName: https-listener # target specific sections (must have at most 1 items)
+
+

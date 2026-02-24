@@ -1,0 +1,32 @@
+orchestrator:
+  enabled: true
+global:
+  certmgr:
+    external: true
+    clusterIssuer: bnk-ca-cluster-issuer
+  imagePullSecrets:
+    - name: far-secret
+
+conversion:
+  namespace: f5-utils
+
+image:
+  repository: repo.f5.com/images
+  name: f5-lifecycle-operator
+  pullPolicy: Always
+
+fluentbit_sidecar:
+  enabled: false
+  image:
+    name: f5-fluentbit
+
+f5-ipam-operator:
+  image:
+    repository: repo.f5.com/images
+    pullPolicy: IfNotPresent
+  namespace: f5-bnk # required
+  nameOverride: "f5-ipam-operator"
+  fullnameOverride: "f5-ipam-operator"
+
+license:
+  jwt: <LICENSE-JWT>

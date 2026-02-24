@@ -1,0 +1,33 @@
+# updated for v2.1 to include BNKSecPolicy
+apiVersion: "k8s.f5net.com/v1"
+kind: F5BigFwPolicy
+metadata:
+  name: firewallpolicy2-gateway
+  # firewall policy must be applied in same namespace as resource specified in targetRefs
+spec:
+  rule:
+  - name: sc-rule-tcp-ingress-2
+    ipProtocol: any
+    source:
+      addresses:
+      - 10.233.0.0/16
+    destination:
+      addresses:
+      - 172.16.202.100/32
+    logging: true
+    action: drop
+---
+apiVersion: "gateway.k8s.f5net.com/v1alpha1"
+kind: BNKSecPolicy
+metadata:
+  name: secpolicy-gateway
+spec:
+  extensionRefs:
+  - kind: F5BigFwPolicy
+    name: firewallpolicy2-gateway
+    group: k8s.f5net.com
+  targetRefs:
+  - kind: Gateway
+    name: my-http-gateway
+    group: gateway.networking.k8s.io
+    sectionName: "http-listener"

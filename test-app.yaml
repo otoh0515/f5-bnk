@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  # deployment is namespace independent. Include namespace-specific config in nginx-conf-cm
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      nodeSelector:
+        app: workload
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 8080 # port number <1024 requires root privileges
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - mountPath: /etc/nginx/nginx.conf
+            name: nginx-conf-volume
+            readOnly: true
+            subPath: nginx.conf
+      - name: netshoot
+        image: nicolaka/netshoot:latest
+        command: [ "sleep", "infinity" ] # Keeps the container running
+        imagePullPolicy: IfNotPresent
+        # Optional: Add resources or limits if needed
+        volumeMounts:
+        - name: netshoot-conf-volume
+          mountPath: /root/.curlrc
+          subPath: .curlrc
+      volumes:
+        - name: nginx-conf-volume
+          configMap:
+            name: nginx-conf-cm
+        - name: netshoot-conf-volume
+          configMap:
+            name: netshoot-conf-cm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-app-svc
+spec:
+  clusterIP: None
+  ports:
+  - port: 80
+    targetPort: 8080
+  selector:
+    app: nginx
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: netshoot-conf-cm
+data:
+  .curlrc: |
+    # custom CURL options
+    --location 
+    --silent 
+    --insecure 
+    --max-time 1

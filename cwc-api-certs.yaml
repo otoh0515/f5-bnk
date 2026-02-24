@@ -1,0 +1,65 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+    name: cwc-license-generate-cert
+spec:
+    subject:
+        countries:
+        - US
+        provinces:
+        - Washington
+        localities:
+        - Seattle
+        organizations:
+        - F5 Networks
+        organizationalUnits:
+        - PD
+    emailAddresses:
+        - clientcert@f5net.com
+    commonName: f5net.com
+    dnsNames:
+        - f5-spk-cwc.f5-utils
+    secretName: cwc-license-certs-out
+    issuerRef:
+        name: bnk-ca-cluster-issuer
+        kind: ClusterIssuer
+    duration: 8640h
+    privateKey:
+        rotationPolicy: Always
+        encoding: PKCS1
+        algorithm: RSA
+        size: 4096
+    revisionHistoryLimit: 10    
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+    name: cwc-license-client-generate-cert
+spec:
+    subject:
+        countries:
+        - US
+        provinces:
+        - Washington
+        localities:
+        - Seattle
+        organizations:
+        - F5 Networks
+        organizationalUnits:
+        - PD
+    emailAddresses:
+        - clientcert@f5net.com
+    commonName: f5net.com
+    dnsNames: 
+        - f5-spk-cwc.f5-utils
+    secretName: cwc-license-client-certs-out
+    issuerRef:
+        name: bnk-ca-cluster-issuer
+        kind: ClusterIssuer
+    duration: 8640h
+    privateKey:
+        rotationPolicy: Always
+        encoding: PKCS1
+        algorithm: RSA
+        size: 4096
+    revisionHistoryLimit: 10

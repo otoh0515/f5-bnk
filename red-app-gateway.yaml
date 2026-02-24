@@ -1,0 +1,34 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: my-tcp-gateway
+  namespace: red
+spec:
+  addresses:
+  - type: "IPAddress"
+    value: 172.16.201.100
+  gatewayClassName: f5-gateway-class
+  listeners:
+  - name: tcp-listener
+    protocol: TCP
+    port: 80
+    allowedRoutes:
+      kinds:
+      - kind: L4Route
+        group: gateway.k8s.f5net.com
+---
+apiVersion: gateway.k8s.f5net.com/v1
+kind: L4Route
+metadata:
+  name: l4-tcp-app
+  namespace: red
+spec:
+  protocol: TCP
+  parentRefs:
+  - name: my-tcp-gateway
+    sectionName: tcp-listener
+  rules:
+  - backendRefs:
+    - name: nginx-app-svc
+      namespace: red
+      port: 80
